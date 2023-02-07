@@ -1,0 +1,58 @@
+Neki od korisničkih računa za testiranje:
+
+test_user : Test1234
+A_test_user: Password123
+new_user : MyPassword1423
+
+
+Upute za pokretanje programa:
+
+
+Administratorski program (usrmgmt.py)
+
+Dodavanje korisnika:
+python3 usrmgmt.py add <username> 
+	<username> - korisnicko ime koje se zeli dodati
+	Kada se program pokrene potrebno je unijeti lozinku 
+	koja ce se koristiti za korisnicko ime i ponoviti je. 
+	Lozinka mora sadržavati barem jedno veliko slovo i barem 
+	jedan broj te barem 8 znakova.
+
+Promjena lozinke:
+python3 usrmgmt.py passwd <username>
+	<username> - korisnicko ime cija se lozinka zeli promijeniti
+	Kada se program pokrene, potrebno je unijeti novu lozinku i 
+	ponoviti je. Lozinka ima istu kompleksnost kao i kod dodavanja korisnika.
+
+Zatraživanje promjene lozinke
+python3 usrmgmt.py forcepass <username>
+	<username> - korisnicko ime korisnika za kojeg 
+	se trazi promjena lozinke prilikom sljedece prijave
+	Program se pokrece i dodaje zastavicu kod korisnika 
+	koji treba promijeniti lozinku. Program ispisuje da 
+	ce obavijestiti korisnika o promjeni lozinke prilikom 
+	prijave. Program potom zavrsava s izvodenjem.
+
+Brisanje korisnika
+python3 usrmgmt.py del <username>
+	<username> - korsinicko ime korisnika kojeg 
+	se zeli obrisati
+	Program trazi korisnika u datoteci i brise ga 
+	te zavrsava s izvodenjem nakon sto ispise je 
+	li uspjesno obrisao korisnika.
+
+
+
+Program za prijavljivanje (login.py)
+
+python3 login.py <username>
+
+	<username> - Korisnicko ime korisnika koji se zeli prijaviti
+	Program pri pokretanju trazi od korisnika da unese lozinku. 
+	Ako je korisnik unio ispravnu lozinku ispisuje se "Login successful.". 
+	Ako je uneseno neispravno korisnicko ime ili lozinka ispisuje se 
+	poruka "Username or password is incorrect". Program ne ispisuje koji od 
+	parametara nije ispravan. Ako je administrator od korisnika zatrazio 
+	da promijeni lozinku, korisnik prvo unosi trenutnu lozinku, a potom se 
+	od njega trazi da unese novu lozinku.
+

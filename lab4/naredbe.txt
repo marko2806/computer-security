@@ -1,0 +1,37 @@
+1. zad
+ping 192.168.0.3
+ping mail.fer.hr
+ping 161.53.19.1
+ping imunes.net
+
+2.zad
+
+#na vritualnom računalu
+watch -n 0.5 netstat -ant
+watch -n 0.1 netstat -ant
+
+
+#na stvarnom računalu
+netstat -sS -v 192.168.0.3
+netstat -sT -v 192.168.0.3
+netstat -sU -v 192.168.0.3
+netstat -O -v 192.168.0.3
+netstat -A -v 192.168.0.3
+
+3. zad
+hcp FW.sh FW:
+hcp FW_int.sh FW_int:
+himage FW ./FW.sh start
+himage FW_int ./FW_int.sh start
+
+#dodatno pokrenute naredbe za testiranje vatrozida navedene u zadatku laboratorijske vježbe
+
+4. zad
+
+
+
+nano /etc/ssh/sshd_config #za uređivanje datoteke. Pokrenuto u bashevima čvorova mail-relay i mail
+ssh-keygen -pokrenuto u bashu čvora pc
+ssh-copy-id root@198.50.68.10 -p 1111 #pokrenuto u bashu čvora pc
+ssh-copy-id -o ProxyJump=198.50.68.10:1111 root@10.0.1.10 -p 2222 #pokrenuto u bashu čvora pc
+ssh -J root@198.50.68.10:1111 root@10.0.1.10 -p 2222 #pokrenuto u bashu čvora pc

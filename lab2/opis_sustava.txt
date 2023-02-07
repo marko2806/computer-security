@@ -1,0 +1,16 @@
+Korisnička imena su pohranjena bez kriptiranja u izvornom obliku.
+
+Lozinkama u izvornom obliku dodaje se nasumičnih 16 bajtova salt-a. Lozinka i salt se predaju kao ulaz u scrypt za izračunavanje sažetka koji se zajedno sa salt-om pohranjuje u datoteku. 
+
+Pohranjivanje lozinki u izvornom obliku predstavlja veliku ranjivost ako napadač dobije pristup datoteci s lozinkama. Predavanje samo lozinki kao ulaz u kriptografsku funkciju sažetka i pohranjivanje tih sažetaka predstavlja malo bolje rješenje od pohranjivanja lozinku u izvornom obliku, ali je i dalje nedovoljno sigurno rješenje. Ranjivost predstavlja činjenica da dvije iste lozinke imaju isti sažetak.
+ 
+Rješenje tog problema je u korištenju salt-a u kombinaciji s lozinkom. Dovođenje takvog niza znakova na ulaz kriptografske funkcije sažetka daje različite izlaze za istu lozinku. U programskom rješenju se za funkciju sažetka koristi metoda Scrypt koja se u prošloj vježbi koristila za derivaciju ključa. Prednost navedene metode naprema računanju sažetka pomoću SHA-512, MD5 ili sličnih algoritama je činjenica da je računanje sažetka pomoću Scrypta procesorski i memorijski zahtjevno te se tako dodatno otežavaju napadi grubom silom. Dodatna prednost je što se Scrypt može podesiti da bude još računski i memorijski zahtjevniji tako da će ostati siguran i nakon napredovanja tehnologije. 
+
+Model prijetnje pretpostavlja će napadač dobiti pristup datoteci s lozinkama pa je cilj vježbe braniti se od off-line pogađanja. Iz navedenog razloga uvođenje vremena čekanja između dviju lozinki ili zaključavanje korisničkog računa nakon određenog broja pokušaja nisu od velike koristi.
+ 
+Za kompleksnost lozinke sustav traži da se lozinka sastoji od barem 8 znakova, barem jednog velikog slova i barem jedne znamenke.
+
+Dodatnu sigurnost pruža mogućnost da administrator može zatražiti od korisnika da promijeni lozinku po potrebi. Da bi promijenio lozinku, korisnik prvo mora unijeti trenutnu lozinku, a potom promijeniti lozinku. Vrši se dodatna provjera da nova lozinka nije jednaka trenutnoj lozinki.
+
+Sustav se sastoji od programa za upravljanje korisničkim računima (usrmgmt.py) i od programa za prijavu korisnika (login.py). Pomoću programa za upravljanje računima može se dodati korisnički račun, promijeniti lozinka korisničkog računa, zatražiti korisnika da promijeni lozinku i obrisati korisnički račun. Podaci o korisničlkim računima se spremaju u datoteku "users.bin" u formatu "<username>:<hashirana lozinka>:<zastavica je li potrebno promijeniti lozinku>:<salt>".
+Pomoću programa za prijavu korisnika, korisnik unosi svoje korisničko ime i lozinku. Ukoliko su oba parametra točna, korisnik je prijavljen. Po potrebi nakon prijave mora promijeniti lozinku ukoliko je to administrator zatražio.

@@ -1,0 +1,105 @@
+1.zadatak
+TTL vrijednosti su sljedeće:
+za virtualni stroj: TTL=64 (početno 64)
+za mail.fer.hr : TTL=123 (početno 128)
+za 161.53.19.1: TTL=251 (početno 255)
+za imunes.net: TTL=59 (početno 64)
+
+Po vrijednosti početnih TTL vrijednosti može se pretpostaviti koji je operacijski sustav pokrenut na računalu kojeg se "ping-a" jer te vrijednosti ovise o operacijskom sustavu računala s kojih se ti paketi šalju. 
+Tako je za operacijski sustav Windows podrazumijevana TTL vrijednost 128, a za Linux i Mac OS 64, a za usmjerivače 255.
+Iz priloženoga se može pretpostaviti da virtualni stroj pokreće operacijski sustav Linux, mail.fer.hr pokreće Windows, adresa
+161.53.19.1 je adresa usmjerivača, a računalo imunes.net pokreće Linux /MacOS.
+
+2. zadatak
+
+TCP scan:
+
+otvoreni portovi
+22/ssh
+
+Ispis netstata na virtualnom računalu se ne mijenja jer se konekcije uspostavljaju i raskidaju brže nego što se ispis netstata osvježava.
+Ispis na terminalu je podešen da osvježava izlaz svakih 0.5 sekundi, što je puno više od vremena potrebnog za uspostavljanje i raskidanje konekcije. Smanjenjem parametra na 0.1, mogu se uočiti kratka uspostavljanja i raskidanja konekcija koje mijenjaju ispis.
+
+TCP SYN scan:
+
+otvoreni portovi
+22/ssh
+
+Izlaz na virtualnom stroju se mijenja jer računalo koje skenira ulaze virtualnog računala šalje TCP SYN paket, 
+na koji mu virtualno računalo odgovara s SYN/ACK paketom ako je port otvoren, a RST ako port nije otvoren. 
+Ako do računala na kojem se provodi skeniranje ne dobije nikakav paket, 
+onda je taj paket najvjerojatnije vatrozid filtrirao. 
+Ako računalo koje skenira portove primi paket sa zastavicama SYN/ACK, ono saznaje da je taj port otvoren i 
+ne odgovara taj paket TCP SYN paketom te se ne uspostavlja konekcija. 
+Virtualno računalo neko vrijeme čeka odgovor što uzrokuje promjenu ispisa na netstatu. 
+Ispis pokazuje da je navedena konekcija zaglavila u stanju SYN_RCVD. Virtualni stroj radi TCP retransmisiju te nakon nekog vremena prekida uspostavljanje konekcije nakon čega se briše izlaz na netstatu.
+
+UDP scan:
+
+67/udp    open|filtered dhcps
+68/udp    open|filtered dhcpc
+4500/udp  open|filtered nat-t-ike
+5353/udp  open|filtered zeroconf
+49173/udp open|filtered unknown
+
+U ovoj situaciji nema ispisa na netstat terminalu jer nmap šalje UDP paket na svaki port i ako dobije ICMP poruku "Port Unreachable" zna da je port zatvoren, a u protivnom zaključuje da je port otvoren ili pristup tome portu blokira vatrozid. 
+Kako na virtualnom računalu nije otvoren ni jedan port, ne može se uspostaviti ni jedna konekcija pa nema promjene ispisa na netstatu. 
+
+Određivanje operacijskog sustava
+
+MAC Address: 08:00:27:00:B6:3E (Oracle VirtualBox virtual NIC)
+Device type: general purpose
+Running: Linux 4.X|5.X
+OS CPE: cpe:/o:linux:linux_kernel:4 cpe:/o:linux:linux_kernel:5
+OS details: Linux 4.15 - 5.6
+…
+Određivanje operacijskog sustava bazira se na TCP fingerprintingu. Program nmap s računala šalje višestruke TCP SYN pakete virtualnom računalu 
+pritom ne uspostavljajući konekcije kako bi odredio kako izgleda TCP stog. 
+Program uspoređuje dobiveni stog sa stogovima u javnoj bazi podataka. Virtualno računalo na TCP SYN pakete odgovara TCP SYN/ACK paketima na koje računalo ne odgovara te se ne uspostavlja konekcija. Virtualno računalo pokušava ponovo poslati paket TCP SYN/ACK pet puta te ako ne dobije TCP SYN kao odgovor , prekida uspostavljanje konekcije.
+
+Skeniranje servisa:
+
+PORT   STATE SERVICE VERSION
+22/tcp open  ssh     OpenSSH 7.6p1 Ubuntu 4ubuntu0.3 (Ubuntu Linux; protocol 2.0)
+
+Računalo skenira razne portove virtualnog računala tako da pokušava uspostaviti konekciju na tom portu.
+Računalo tijekom skeniranja servisa virtualnog računala pokušava uspostaviti konekciju na SSH portu s porta 48388. 
+Kada dobije SYN/ACK odgovor kao znak da je port otvoren, računalo otvara novu SSH konekciju s porta 1027 te preko te konekcije dobiva 
+podatke o servisu nakon čega se konekcija raskida. 
+Na portu 44388 nikada ne pošalje nazad SYN kao odgovor na SYN/ACK te ta konekcija ostaje zapisana u netstatu neko vrijeme,  a konekcija na portu 1027 se ne ispisuje zbog brzine otvaranja i zatvaranja konekcije.
+
+
+Općenito skeniranje:
+Na izlazu virtualnog računala se uspostavljaju konekcije slično kao i kod skeniranja OS-a. 
+Otvaraju se još neke dodatne konekcije za Diffie Hellmanovu razmjenu ključeva u protokolu SSH.
+
+
+3. zadatak 
+
+Sve izmjene potrebne za konfiguriranje vatrozida dodane su u FW.sh i FW_int.sh datoteke.
+
+4. zadatak
+
+U programu Imunes potrebno je pokrenuti eksperiment s pokrenutim FW.sh i FW_int.sh datotekama koje su izmijenjene da 
+mail-relay prihvaća konekcije portu 1111, a poslužitelj mail na portu 2222.
+
+Za čvorove pc, mail-relay i mail potrebno je pokrenuti bash desnim klikom na čvor.
+U bashu čvora mail-relay i čvora mail potrebno je izmijeniti konfiguracijske datoteke /etc/ssh/sshd_config tako da se u njima promijeni:
+- "#Port 22" u "Port 1111" za mail-relay, odnosno u "Port 2222" za mail.
+- privremeno je potrebno promijeniti "#PermitRootLogin prohibit-password" u "PermitRootLogin yes" kako bi se mogli prenijeti ključevi za root korisnika
+Izmijenjene datoteke potrebno je spremiti. Nakon uređivanja na čvorovima mail i mail-relay potrebno je promijeniti lozinke jer će se one zahtijevati prilikom
+dodavanja ključeva. Nakon toga je potrebno resetirati oba poslužitelja kroz sučelje Imunes-a ili kroz naredbenu liniju.
+Na čvoru pc potrebno je stvoriti privatni i javni ključ. Javni ključ je potrebno poslati poslužiteljima mail-relay i mail.
+Prilikom stvaranja ključeva traži se unos fraze koja će se koristiti za zaštitu privatnog ključa (za poslani ključ ona glasi:"testingphrase").
+Javni ključ je potrebno kopirati na poslužitelj mail-relay i poslužitelj mail preko posredničkog poslužitelja mail-relay. 
+Pri tome treba slati ključeve na port 1111 za mail-relay, odnosno port 2222 za poslužitelj mail te se u oba poslužitelja ključ šalje za korisnika root.
+Prilikom kopiranja ključeva na mail-relay poslužitelj potrebno je unijeti lozinku za korisnika na poslužitelju, 
+a prilikom kopiranja na mail poslužitelj potrebno je dodatno unijeti i frazu za ključ.
+Nakon kopiranja javnog ključa na poslužitelje u konfiguracijskim datotekama poslužitelja potrebno je izmijeniti dio datoteke "PermitRootLogin yes" 
+natrag u "#PermitRootLogin prohibit-password" te resetirati poslužitelje. Sada je moguće uspostaviti SSH konekciju samo pomoću ključeva i fraza.
+
+Za poboljšanje sigurnosti se dodatno može postaviti razina nadzora na opširnu razinu mijenjanjem "LogLevel INFO" u "LogLevel VERBOSE" kako bi se bilježilo više
+informacija poput neuspjelih prijava.
+Dodatno je poželjno postaviti verziju protokola na SSH 2 naredbom "Protocol 2". 
+Preporučeno je i zabraniti korištenje r* naredbi, no te naredbe su zabranjene u podrazumijevanoj konfiguraciji.
+Dodatno je preporučeno zabraniti root login pomoću naredbe "PermitRootLogin no" te ukloniti autentifikaciju lozinkama naredbom "PasswordAuthentification no".

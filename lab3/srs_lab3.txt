@@ -1,0 +1,122 @@
+Marko Tutić 0035613861
+
+
+
+1. zadatak
+
+Sadržaj /etc/passwd datoteke:
+root:x:0:0:root:/root:/bin/bash
+daemon:x:1:1:daemon:/usr/sbin:/usr/sbin/nologin
+bin:x:2:2:bin:/bin:/usr/sbin/nologin
+sys:x:3:3:sys:/dev:/usr/sbin/nologin
+sync:x:4:65534:sync:/bin:/bin/sync
+games:x:5:60:games:/usr/games:/usr/sbin/nologin
+man:x:6:12:man:/var/cache/man:/usr/sbin/nologin
+lp:x:7:7:lp:/var/spool/lpd:/usr/sbin/nologin
+mail:x:8:8:mail:/var/mail:/usr/sbin/nologin
+news:x:9:9:news:/var/spool/news:/usr/sbin/nologin
+uucp:x:10:10:uucp:/var/spool/uucp:/usr/sbin/nologin
+proxy:x:13:13:proxy:/bin:/usr/sbin/nologin
+www-data:x:33:33:www-data:/var/www:/usr/sbin/nologin
+backup:x:34:34:backup:/var/backups:/usr/sbin/nologin
+list:x:38:38:Mailing List Manager:/var/list:/usr/sbin/nologin
+irc:x:39:39:ircd:/var/run/ircd:/usr/sbin/nologin
+gnats:x:41:41:Gnats Bug-Reporting System (admin):/var/lib/gnats:/usr/sbin/nologin
+nobody:x:65534:65534:nobody:/nonexistent:/usr/sbin/nologin
+_apt:x:100:65534::/nonexistent:/bin/false
+mysql:x:101:101:MySQL Server,,,:/nonexistent:/bin/false
+
+Postupak:
+Za dohvat sadržaja datoteke u polje za unos IP adrese unesena je sljedeća naredba:
+1 | while read line; do echo $line; done < /etc/passwd
+
+Ranjivost ovog dijela aplikacije leži u tome što se u polju očekuje unos IP adrese nakon 
+kojeg aplikacija u shellu izvodi naredbu "ping <upisana_ip_adresa>". 
+Svojstvo shella je da može izvoditi više naredbi odjednom tako da se kao napad može predati 
+neka IP adresa i nakon toga onzaka "|" nakon koje slijedi dodatna naredba.
+Kako poslužitelj ne provodi validaciju unosa, izvodi se naredba ping nakon koje se dodatno izvodi bilo koja 
+nareba po izboru. Za dohvaćanje sadržaja unesena je while petlja koja čita /etc/passwd datoteku liniju
+po liniju. 
+Zaštita od ranjivosti je validiranje unosa  na klijentskoj i poslužiteljskoj strani da prihvaća samo izraze za IP adrese.
+
+2. zadatak
+
+Općenito je u početku potrebno unijeti sljedeći tekst kako bi se utvrdilo je li aplikacija uopće ranjiva na SQL umetanje:
+' OR '1'='1 
+Kako se za ovu aplikaciju zna da je ranjiva, ovaj korak je preskočen.
+Dodatno se unosi sljedeći tekst kako bi se utvrdilo od koliko stupaca se sastoji SELECT dio SQL naredbe:
+' OR '1'='1' ORDER BY 1#
+' OR '1'='1' ORDER BY 2#
+' OR '1'='1' ORDER BY 3#
+Treća naredba vraća grešku pa se zaključuje da se upit sastoji od 2 stupca.
+
+Nakon toga se kao unos predaje sljedeći tekst: ' OR '1'='1' UNION SELECT first_name, password AS last_name FROM users WHERE '1'='1.
+Dio tesksta "' OR '1'='1'" služi kako bi se iz SQL upita u kodu aplikacije dobila tautologija, odnosno da aplikacija prikaže sve podatke
+jer je uvijet filtriranja uvijek istinit za sve podatke. Dio "UNION SELECT ..." koristi se za dohvaćanje drugih podataka iz baze podataka. 
+Pri tome broj stupaca u drugom dijelu upita mora biti jednak broju stupaca u prvom dijelu upita, ali sami stupci i tablica iz koje se 
+dohvaćaju podaci ne mora biti jednaki. Ranjivost sustava leži u tome da poslužitelj ima napisanu naredbu koja prima vrijednost za upit u obliku string vrijednosti
+koju potom smješta unutar navodnika. Sustav nema validaciju tako da se u unosu ti navodnici mogu ranije zatvoriti nakon 
+čega se može dopisati SQL naredba na način da pomoću unije izlista dva stupca za podatke iz bilo koje talice. Dodatna ranjivost je 
+što poslužitelj ne kontrolira koliko je rezultata dobio nakon SQL upita te ih sve ispisuje. Rješenje ranjivosti je uvođenje validacije 
+unosa na način da se zabranjuju specijalni znakovi poput: ',{,} i sl. 
+Dodatno se može ograničiti veličina unosa, mogu se koristiti pripremljene izjave, korisititi pohranjene procedure u SQL upitima i minimizirati ovlasti
+tako da čak i ako napadač uspije izvesti SQL umetanje, da nema pristup cijeloj bazi podataka. 
+Na samom kraju aplikacija ne bi smjela opisivati greške i na taj način olakšavati napadaču izradu prikladnog unosa za SQL umetanje.
+
+Hash za korisnika Pablo Picasso dobiven SQL umetanjem glasi: 0d107d09f5bbe40cade3de5c71e9e9b7. Navedeni hash predaje se
+kao ulaz programu crackstation.net koji navedeni hash dekriptira u lozinku "letmein". Dodatna ranjivost aplikacije je da ne sadrži salt
+za lozinke pa se kod nekih korisničkih računa uočavaju jednaki sažetci.
+
+
+
+3. zadatak
+Stored varijanta
+
+Kao ulaz predaje se tekst: "<script>alert(docuemnt.cookie)</script>" koji nakon osvježavanja stranice u dijalogu ispisuje cookie pomoću kojeg smo autentificirani u stranicu.
+Nakon osvježavanja stranice prikazuje se alert koji sadrži podatke o cookieu:
+PHPSESSID=59n2sivethhnpt4qtaik1jq6t1
+Polje za unos ima ograničenje od 50 znakova koje se može zaobići pomoću inspect element alata u kojem je potrebno u polju za unos modificirati 
+<textarea name="mtxMessage" cols="50" rows="3" maxlength="50"></textarea>
+u 
+<textarea name="mtxMessage" cols="50" rows="3"></textarea>
+Kako se validacija provodi samo na klijentu, ograničenje na 50 znakova je zaobiđeno.
+
+Reflected varijanta
+Kao ulaz predaje se tekst isti kao i u prethodnom napadu. 
+Reflected napad se razlikuje od stored napada po tome što se za ovaj napad umetnuta skripta na sprema na bazu podataka poslužitelja, 
+već se u ulaz programa predaje skripta za koju aplikacija generira URL koji sadrži ranjivu skriptu.
+Sada je potrebno navesti žrtvu da klikne na maliciozni link, te je navedeni napad malo otežan u odnosu na prethodni gdje ne bi bilo potrebno kliknuti na link
+da se skripta izvrši već bi se ona izvršila automatski samim odlaskom na neki dio stranice web aplikacije.
+
+PHPSESSID=59n2sivethhnpt4qtaik1jq6t1
+Unos jednak kao i u prošlom slučaju te je rezultat napada maliciozni URL:
+http://172.17.0.2/vulnerabilities/xss_r/?name=%3Cscript%3Ealert%28document.cookie%29%3C%2Fscript%3E#
+
+
+
+4. zadatak
+
+Za dobivanje lokacije etc dirketorija u dijelu za command injection unesene su sljedeće vrijednosti:
+1 | ls 
+1 | ls ../
+1 | ls ../..
+1 | ls ../../..
+1 | ls ../../../..
+1 | ls ../../../../..
+1 | ls ../../../../../..
+
+Nakon zadnje naredbe u ispisu je prikazan direktorij etc. Dodatno je radi provjere radi li se o ispravnom direktoriju unesena naredba:
+1 | ls ../../../../../../etc
+Nakon ove naredbe ispisuje se datoteka passwd pa se zaključuje da je relativna putanja datoteke ../../../../../../etc/passwd. Ta vrijednost
+biti će predana u GET parametru zahtjeva kod djela za File inclusion.
+
+Za dohvat sadržaja datoteke /etc/passwords potrebno je url promijeniti iz:
+http://172.17.0.2/vulnerabilities/fi/?page=include.php
+u
+http://172.17.0.2/vulnerabilities/fi/?page=../../../../../../etc/passwd
+
+Zaštita od ovakvih napada je smanjivanje ovlasti na datotekama po principu najmanjih ovlasti. Dodatno se može uvesti zaštita validacijom ulaza
+kojom se spriječava pristup datotekama izvan direktorija sa datotekama, odnosno da korisnik ne može unijeti "..".
+Zatim se može uvesti kriptiranje osjetiljivih datoteka da čak i ako napadačdođe do datoteka da ih je potrebno dekriptirati. 
+Na kraju sama aplikacija može sadržavati listu datoteka koje se smiju predati kao parametar
+(whitelist) u GET zahtjevu i na taj način spriječiti neželjene unose naziva datoteka.
